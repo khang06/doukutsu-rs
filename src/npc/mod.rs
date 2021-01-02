@@ -257,6 +257,10 @@ impl GameEntity<([&mut Player; 2], &NPCList, &mut Stage, &BulletManager)> for NP
             112 => self.tick_n112_quote_teleport_in(state, players),
             113 => self.tick_n113_professor_booster(state),
             114 => self.tick_n114_press(state, players, npc_list),
+            116 => self.tick_n116_red_petals(state),
+            119 => self.tick_n119_table_chair(state),
+            120 => self.tick_n120_colon_a(state),
+            121 => self.tick_n121_colon_b(state),
             124 => self.tick_n124_sunstone(state),
             125 => self.tick_n125_hidden_item(state, npc_list),
             129 => self.tick_n129_fireball_snake_trail(state),
@@ -273,9 +277,11 @@ impl GameEntity<([&mut Player; 2], &NPCList, &mut Stage, &BulletManager)> for NP
             199 => self.tick_n199_wind_particles(state),
             211 => self.tick_n211_small_spikes(state),
             234 => self.tick_n234_red_flowers_picked(state),
+            278 => self.tick_n278_little_family(state),
             298 => self.tick_n298_intro_doctor(state),
             299 => self.tick_n299_intro_balrog_misery(state),
             300 => self.tick_n300_intro_demon_crown(state),
+            359 => self.tick_n359_droplet_generator(state, players, npc_list),
             //_ => Ok(()),
             _ => {
                 warn!("tried to tick unknown entity {}", self.npc_type);

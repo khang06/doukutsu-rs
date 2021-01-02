@@ -1,6 +1,7 @@
 use ggez::GameResult;
 use num_traits::{abs, clamp};
 
+use crate::caret::CaretType;
 use crate::common::Direction;
 use crate::npc::list::NPCList;
 use crate::npc::NPC;
@@ -288,6 +289,55 @@ impl NPC {
 
     pub(crate) fn tick_n049_skullhead(&mut self, state: &mut SharedGameState, npc_list: &NPCList) -> GameResult {
         let parent = self.get_parent_ref_mut(npc_list);
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n120_colon_a(&mut self, state: &SharedGameState) -> GameResult {
+        self.anim_rect = match self.direction {
+            Direction::Left => state.constants.npc.n120_colon_a[0],
+            _ => state.constants.npc.n120_colon_a[1],
+        };
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n121_colon_b(&mut self, state: &mut SharedGameState) -> GameResult {
+        if self.direction == Direction::Left {
+            match self.action_num {
+                0 | 1 => {
+                    if self.action_num == 0 {
+                        self.action_num = 1;
+                        self.anim_num = 0;
+                        self.anim_counter = 0;
+                    }
+
+                    if self.rng.range(0..120) == 10 {
+                        self.action_num = 2;
+                        self.action_counter = 0;
+                        self.anim_num = 1;
+                    }
+                }
+                2 => {
+                    self.action_counter += 1;
+                    if self.action_counter > 8 {
+                        self.action_num = 1;
+                        self.anim_num = 0;
+                    }
+                }
+                _ => {}
+            }
+
+            self.anim_rect = state.constants.npc.n121_colon_b[self.anim_num as usize];
+        } else {
+            self.anim_rect = state.constants.npc.n121_colon_b[2];
+
+            self.action_counter += 1;
+            if self.action_counter > 100 {
+                self.action_counter = 0;
+                state.create_caret(self.x, self.y, CaretType::Zzz, Direction::Left);
+            }
+        }
 
         Ok(())
     }

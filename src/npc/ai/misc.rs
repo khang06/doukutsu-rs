@@ -976,6 +976,18 @@ impl NPC {
         Ok(())
     }
 
+    pub(crate) fn tick_n116_red_petals(&mut self, state: &SharedGameState) -> GameResult {
+        self.anim_rect = state.constants.npc.n116_red_petals;
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n119_table_chair(&mut self, state: &SharedGameState) -> GameResult {
+        self.anim_rect = state.constants.npc.n119_table_chair;
+
+        Ok(())
+    }
+
     pub(crate) fn tick_n125_hidden_item(&mut self, state: &mut SharedGameState, npc_list: &NPCList) -> GameResult {
         if self.life < 990 {
             npc_list.create_death_smoke(self.x, self.y, self.display_bounds.right, 8, state, &self.rng);
@@ -1310,6 +1322,104 @@ impl NPC {
                 Direction::Right => self.anim_rect = state.constants.npc.n234_red_flowers_picked[1],
                 _ => self.anim_rect = state.constants.npc.n234_red_flowers_picked[1],
             }
+        }
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n278_little_family(&mut self, state: &SharedGameState) -> GameResult {
+        match self.action_num {
+            0 | 1 => {
+                if self.action_num == 0 {
+                    self.action_num = 1;
+                    self.anim_num = 0;
+                    self.anim_counter = 0;
+                    self.vel_x = 0;
+                }
+
+                if self.rng.range(0..60) == 1 {
+                    self.action_num = 2;
+                    self.action_counter = 0;
+                    self.anim_num = 0;
+                }
+                if self.rng.range(0..60) == 1 {
+                    self.action_num = 10;
+                    self.action_counter = 0;
+                    self.anim_num = 1;
+                }
+            }
+            2 => {
+                self.anim_counter += 1;
+                if self.anim_counter > 8 {
+                    self.action_num = 1;
+                    self.anim_num = 0;
+                }
+            }
+            10 | 11 => {
+                if self.action_num == 10 {
+                    self.action_num = 11;
+                    self.action_counter = self.rng.range(0..16) as u16;
+                    self.anim_num = 0;
+                    self.anim_counter = 0;
+
+                    if self.rng.range(0..9) % 2 == 1 {
+                        self.direction = Direction::Left;
+                    } else {
+                        self.direction = Direction::Right;
+                    }
+                }
+
+                if self.direction == Direction::Left && self.flags.hit_left_wall() {
+                    self.direction = Direction::Right;
+                } else if self.direction == Direction::Right && self.flags.hit_right_wall() {
+                    self.direction = Direction::Left;
+                }
+
+                self.vel_x = match self.direction {
+                    Direction::Left => -0x100,
+                    Direction::Right => 0x100,
+                    _ => 0,
+                };
+
+                self.anim_counter += 1;
+                if self.anim_counter > 4 {
+                    self.anim_counter = 0;
+                    self.anim_num += 1;
+                }
+
+                self.anim_num %= 2;
+
+                self.anim_counter += 1;
+                if self.anim_counter > 0x20 {
+                    self.action_num = 0;
+                }
+            }
+            _ => {}
+        }
+
+        self.vel_y = clamp(self.vel_y + 0x20, 0, 0x5ff);
+        self.x += self.vel_x;
+        self.y += self.vel_y;
+
+        self.anim_rect = match self.event_num {
+            200 => state.constants.npc.n278_little_family[self.anim_num as usize],
+            210 => state.constants.npc.n278_little_family[self.anim_num as usize + 2],
+            _ => state.constants.npc.n278_little_family[self.anim_num as usize + 4],
+        };
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n359_droplet_generator(&mut self, state: &mut SharedGameState, mut players: [&mut Player; 2], npc_list: &NPCList) -> GameResult {
+        let i = self.get_closest_player_idx_mut(&players);
+        if abs(players[i].x - self.x) < 480 * 0x200 && abs(players[i].y - self.y) < 240 * 0x200
+        && self.rng.range(0..100) == 2 {
+            let mut particle = NPC::create(73, &state.npc_table);
+            particle.cond.set_alive(true);
+            particle.direction = Direction::Bottom;
+            particle.x = self.x + (self.rng.range(-6..6) * 0x200);
+            particle.y = self.y - (7 * 0x200) as i32;
+            let _ = npc_list.spawn(0x100, particle);
         }
 
         Ok(())
