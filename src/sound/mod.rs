@@ -151,6 +151,18 @@ impl SoundManager {
         Ok(())
     }
 
+    pub fn set_music(&mut self, state: bool) -> GameResult {
+        self.tx.send(PlaybackMessage::SetMusic(state))?;
+
+        Ok(())
+    }
+
+    pub fn set_sfx(&mut self, state: bool) -> GameResult {
+        self.tx.send(PlaybackMessage::SetSfx(state))?;
+
+        Ok(())
+    }
+
     pub fn set_speed(&mut self, speed: f32) -> GameResult {
         if speed <= 0.0 {
             return Err(InvalidValue(str!("Speed must be bigger than 0.0!")));
@@ -169,6 +181,8 @@ enum PlaybackMessage {
     Stop,
     PlaySong(Box<Song>),
     PlaySample(u8),
+    SetMusic(bool),
+    SetSfx(bool),
     SetSpeed(f32),
     SaveState,
     RestoreState,
@@ -188,6 +202,8 @@ fn run<T>(rx: Receiver<PlaybackMessage>, bank: SoundBank,
     let channels = config.channels as usize;
     let mut state = PlaybackState::Stopped;
     let mut saved_state: Option<SavedPlaybackState> = None;
+    let mut music = true;
+    let mut sfx = true;
     let mut speed = 1.0;
     let mut org_engine = PlaybackEngine::new(Song::empty(), &bank);
     let mut pixtone = PixTonePlayback::new();
@@ -220,7 +236,9 @@ fn run<T>(rx: Receiver<PlaybackMessage>, bank: SoundBank,
                         org_engine.start_song(*song, &bank);
 
                         for i in &mut bgm_buf[0..frames] { *i = 0x8080 };
-                        frames = org_engine.render_to(&mut bgm_buf);
+                        if music {
+                            frames = org_engine.render_to(&mut bgm_buf);
+                        }
                         bgm_index = 0;
 
                         state = PlaybackState::Playing;
@@ -234,6 +252,12 @@ fn run<T>(rx: Receiver<PlaybackMessage>, bank: SoundBank,
                         }
 
                         state = PlaybackState::Stopped;
+                    }
+                    Ok(PlaybackMessage::SetMusic(state)) => {
+                        music = state;
+                    }
+                    Ok(PlaybackMessage::SetSfx(state)) => {
+                        sfx = state;
                     }
                     Ok(PlaybackMessage::SetSpeed(new_speed)) => {
                         assert!(new_speed > 0.0);
@@ -253,7 +277,9 @@ fn run<T>(rx: Receiver<PlaybackMessage>, bank: SoundBank,
                             }
 
                             for i in &mut bgm_buf[0..frames] { *i = 0x8080 };
-                            frames = org_engine.render_to(&mut bgm_buf);
+                            if music {
+                                frames = org_engine.render_to(&mut bgm_buf);
+                            }
                             bgm_index = 0;
 
                             state = PlaybackState::Playing;
@@ -273,7 +299,9 @@ fn run<T>(rx: Receiver<PlaybackMessage>, bank: SoundBank,
                         ((sample & 0xff) << 8, sample & 0xff00)
                     } else {
                         for i in &mut bgm_buf[0..frames] { *i = 0x8080 };
-                        frames = org_engine.render_to(&mut bgm_buf);
+                        if music {
+                            frames = org_engine.render_to(&mut bgm_buf);
+                        }
                         bgm_index = 0;
                         let sample = bgm_buf[0];
                         ((sample & 0xff) << 8, sample & 0xff00)
@@ -286,7 +314,9 @@ fn run<T>(rx: Receiver<PlaybackMessage>, bank: SoundBank,
                 } else {
                     pxt_index = 0;
                     for i in pxt_buf.iter_mut() { *i = 0x8000 };
-                    pixtone.mix(&mut pxt_buf, sample_rate / speed);
+                    if sfx {
+                        pixtone.mix(&mut pxt_buf, sample_rate / speed);
+                    }
                 }
 
                 if frame.len() >= 2 {

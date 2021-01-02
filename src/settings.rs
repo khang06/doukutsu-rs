@@ -16,6 +16,8 @@ pub struct Settings {
     pub touch_controls: bool,
     pub player1_key_map: PlayerKeyMap,
     pub player2_key_map: PlayerKeyMap,
+    pub music: bool,
+    pub sfx: bool,
     #[serde(skip)]
     pub speed: f64,
     #[serde(skip)]
@@ -56,6 +58,8 @@ impl Default for Settings {
             touch_controls: cfg!(target_os = "android"),
             player1_key_map: p1_default_keymap(),
             player2_key_map: p2_default_keymap(),
+            music: true,
+            sfx: true,
             speed: 1.0,
             god_mode: false,
             infinite_booster: false,

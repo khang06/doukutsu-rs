@@ -104,6 +104,9 @@ impl Scene for TitleScene {
         }
         self.main_menu.push_entry(MenuEntry::Active("Quit".to_string()));
 
+        self.option_menu.push_entry(MenuEntry::Toggle("Music".to_string(), state.settings.music));
+        self.option_menu.push_entry(MenuEntry::Toggle("Sound effects".to_string(), state.settings.sfx));
+
         self.option_menu.push_entry(MenuEntry::Toggle("Original timing (50TPS)".to_string(), state.timing_mode == TimingMode::_50Hz));
         self.option_menu.push_entry(MenuEntry::Toggle("Lighting effects".to_string(), state.settings.shader_effects));
         if state.constants.supports_og_textures {
@@ -173,6 +176,20 @@ impl Scene for TitleScene {
                 match self.option_menu.tick(&mut self.controller, state) {
                     MenuSelectionResult::Selected(0, toggle) => {
                         if let MenuEntry::Toggle(_, value) = toggle {
+                            state.settings.music = !state.settings.music;
+                            *value = state.settings.music;
+                            state.sound_manager.set_music(*value)?;
+                        }
+                    }
+                    MenuSelectionResult::Selected(1, toggle) => {
+                        if let MenuEntry::Toggle(_, value) = toggle {
+                            state.settings.sfx = !state.settings.sfx;
+                            *value = state.settings.sfx;
+                            state.sound_manager.set_sfx(*value)?;
+                        }
+                    }
+                    MenuSelectionResult::Selected(2, toggle) => {
+                        if let MenuEntry::Toggle(_, value) = toggle {
                             match state.timing_mode {
                                 TimingMode::_50Hz => { state.timing_mode = TimingMode::_60Hz }
                                 TimingMode::_60Hz => { state.timing_mode = TimingMode::_50Hz }
@@ -182,14 +199,14 @@ impl Scene for TitleScene {
                             *value = state.timing_mode == TimingMode::_50Hz;
                         }
                     }
-                    MenuSelectionResult::Selected(1, toggle) => {
+                    MenuSelectionResult::Selected(3, toggle) => {
                         if let MenuEntry::Toggle(_, value) = toggle {
                             state.settings.shader_effects = !state.settings.shader_effects;
 
                             *value = state.settings.shader_effects;
                         }
                     }
-                    MenuSelectionResult::Selected(2, toggle) => {
+                    MenuSelectionResult::Selected(4, toggle) => {
                         if let MenuEntry::Toggle(_, value) = toggle {
                             state.settings.original_textures = !state.settings.original_textures;
                             state.reload_textures();
@@ -197,7 +214,7 @@ impl Scene for TitleScene {
                             *value = state.settings.original_textures;
                         }
                     }
-                    MenuSelectionResult::Selected(3, toggle) => {
+                    MenuSelectionResult::Selected(5, toggle) => {
                         if let MenuEntry::Toggle(_, value) = toggle {
                             state.settings.seasonal_textures = !state.settings.seasonal_textures;
                             state.reload_textures();
@@ -205,12 +222,12 @@ impl Scene for TitleScene {
                             *value = state.settings.seasonal_textures;
                         }
                     }
-                    MenuSelectionResult::Selected(4, _) => {
+                    MenuSelectionResult::Selected(6, _) => {
                         if let Err(e) = webbrowser::open(DISCORD_LINK) {
                             log::warn!("Error opening web browser: {}", e);
                         }
                     }
-                    MenuSelectionResult::Selected(6, _) | MenuSelectionResult::Canceled => {
+                    MenuSelectionResult::Selected(7, _) | MenuSelectionResult::Canceled => {
                         self.current_menu = CurrentMenu::MainMenu;
                     }
                     _ => {}
