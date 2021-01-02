@@ -276,7 +276,11 @@ impl GameEntity<([&mut Player; 2], &NPCList, &mut Stage, &BulletManager)> for NP
             298 => self.tick_n298_intro_doctor(state),
             299 => self.tick_n299_intro_balrog_misery(state),
             300 => self.tick_n300_intro_demon_crown(state),
-            _ => Ok(()),
+            //_ => Ok(()),
+            _ => {
+                warn!("tried to tick unknown entity {}", self.npc_type);
+                Ok(())
+            },
         }?;
 
         if self.shock > 0 {
