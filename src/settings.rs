@@ -24,6 +24,8 @@ pub struct Settings {
     pub infinite_booster: bool,
     #[serde(skip)]
     pub debug_outlines: bool,
+    #[serde(skip)]
+    pub noclip: bool,
 }
 
 impl Settings {
@@ -58,6 +60,7 @@ impl Default for Settings {
             god_mode: false,
             infinite_booster: false,
             debug_outlines: false,
+            noclip: false,
         }
     }
 }

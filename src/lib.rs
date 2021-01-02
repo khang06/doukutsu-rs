@@ -173,6 +173,7 @@ impl Game {
 
         let state = unsafe { &mut *self.state.get() };
         match key_code {
+            KeyCode::F6 => { state.settings.noclip = !state.settings.noclip }
             KeyCode::F7 => { state.set_speed(1.0) }
             KeyCode::F8 => {
                 if state.settings.speed > 0.2 {

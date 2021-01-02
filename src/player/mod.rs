@@ -516,6 +516,42 @@ impl Player {
         Ok(())
     }
 
+    fn tick_noclip(&mut self) -> GameResult {
+        let speed = if self.controller.jump() {
+            4000
+        } else {
+            2000
+        };
+
+        if self.controller.move_down() {
+            self.y += speed;
+        }
+        if self.controller.move_left() {
+            self.x -= speed;
+        }
+        if self.controller.move_right() {
+            self.x += speed;
+        }
+        if self.controller.move_up() {
+            self.y -= speed;
+        }
+
+        if self.controller.look_left() {
+            self.direction = Direction::Left;
+            self.anim_num = 0;
+        }
+        if self.controller.look_right() {
+            self.direction = Direction::Right;
+            self.anim_num = 0;
+        }
+
+        self.target_x = self.x;
+        self.target_y = self.y;
+        self.vel_x = 0;
+        self.vel_y = 0;
+        Ok(())
+    }
+
     fn tick_animation(&mut self, state: &mut SharedGameState) {
         if self.cond.hidden() {
             return;
@@ -674,10 +710,13 @@ impl GameEntity<&NPCList> for Player {
             self.damage_taken = 0;
         }
 
-        // todo: add additional control modes like NXEngine has such as noclip?
-        match self.control_mode {
-            ControlMode::Normal => self.tick_normal(state, npc_list)?,
-            ControlMode::IronHead => self.tick_ironhead(state)?,
+        if state.settings.noclip {
+            self.tick_noclip()?;
+        } else {
+            match self.control_mode {
+                ControlMode::Normal => self.tick_normal(state, npc_list)?,
+                ControlMode::IronHead => self.tick_ironhead(state)?,
+            }
         }
 
         self.cond.set_increase_acceleration(false);

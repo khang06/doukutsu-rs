@@ -28,6 +28,7 @@ pub struct LiveDebugger {
     selected_event: i32,
     text_windows: Vec<(u32, ImString, ImString)>,
     error: Option<ImString>,
+    p1_control_mode: usize,
 }
 
 impl LiveDebugger {
@@ -45,6 +46,7 @@ impl LiveDebugger {
             selected_event: -1,
             text_windows: Vec::new(),
             error: None,
+            p1_control_mode: 0,
         }
     }
 

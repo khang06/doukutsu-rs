@@ -998,11 +998,12 @@ impl GameScene {
         }
         self.boss.tick(state, ([&mut self.player1, &mut self.player2], &self.npc_list, &mut self.stage, &self.bullet_manager))?;
 
-        self.player1.tick_map_collisions(state, &self.npc_list, &mut self.stage);
-        self.player1.tick_npc_collisions(TargetPlayer::Player1, state, &self.npc_list, &mut self.boss, &mut self.inventory_player1);
-
-        self.player2.tick_map_collisions(state, &self.npc_list, &mut self.stage);
-        self.player2.tick_npc_collisions(TargetPlayer::Player2, state, &self.npc_list, &mut self.boss, &mut self.inventory_player2);
+        if !state.settings.noclip {
+            self.player1.tick_map_collisions(state, &self.npc_list, &mut self.stage);
+            self.player1.tick_npc_collisions(TargetPlayer::Player1, state, &self.npc_list, &mut self.boss, &mut self.inventory_player1);
+            self.player2.tick_map_collisions(state, &self.npc_list, &mut self.stage);
+            self.player2.tick_npc_collisions(TargetPlayer::Player2, state, &self.npc_list, &mut self.boss, &mut self.inventory_player2);
+        }
 
         for npc in self.npc_list.iter_alive() {
             if !npc.npc_flags.ignore_solidity() {
@@ -1302,8 +1303,11 @@ impl Scene for GameScene {
             npc.draw(state, ctx, &self.frame)?;
         }
         self.draw_bullets(state, ctx)?;
-        self.player2.draw(state, ctx, &self.frame)?;
-        self.player1.draw(state, ctx, &self.frame)?;
+        // players should have render priority when in noclip
+        if !state.settings.noclip {
+            self.player2.draw(state, ctx, &self.frame)?;
+            self.player1.draw(state, ctx, &self.frame)?;
+        }
         if state.settings.shader_effects && self.water_visible {
             self.draw_water(state, ctx)?;
         }
@@ -1321,6 +1325,11 @@ impl Scene for GameScene {
         state.game_canvas.draw(ctx, DrawParam::new()
             .scale(Vector2::new(1.0 / state.scale, 1.0 / state.scale)))?;
         self.draw_black_bars(state, ctx)?;
+
+        if state.settings.noclip {
+            self.player2.draw(state, ctx, &self.frame)?;
+            self.player1.draw(state, ctx, &self.frame)?;
+        }
 
         if state.control_flags.control_enabled() {
             self.hud_player1.draw(state, ctx, &self.frame)?;
