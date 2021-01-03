@@ -1,5 +1,5 @@
 use ggez::GameResult;
-use num_traits::{abs, clamp};
+use num_traits::{abs, clamp, clamp_max};
 
 use crate::common::Direction;
 use crate::npc::NPC;
@@ -367,6 +367,171 @@ impl NPC {
         let dir_offset = if self.direction == Direction::Left { 0 } else { 2 };
 
         self.anim_rect = state.constants.npc.n151_blue_robot_standing[self.anim_num as usize + dir_offset];
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n117_curly(&mut self, state: &mut SharedGameState, players: [&mut Player; 2]) -> GameResult {
+        let i = self.get_closest_player_idx_mut(&players);
+        match self.action_num {
+            0 | 1 => {
+                if self.action_num == 0 {
+                    if self.direction == Direction::FacingPlayer {
+                        self.direction = if self.x > players[i].x {
+                            Direction::Left
+                        } else {
+                            Direction::Right
+                        }
+                    }
+
+                    self.action_num = 1;
+                    self.anim_num = 0;
+                    self.anim_counter = 0;
+                }
+
+                self.vel_x = 0;
+                self.vel_y += 0x40;
+            }
+            3 | 4 => {
+                if self.action_num == 3 {
+                    self.action_num = 4;
+                    self.anim_num = 1;
+                    self.anim_counter = 0;
+                }
+
+                self.anim_counter += 1;
+                if self.anim_counter > 4 {
+                    self.anim_counter = 0;
+                    self.anim_num += 1;
+                }
+
+                if self.anim_num > 4 {
+                    self.anim_num = 1;
+                }
+
+                self.vel_y += 0x40;
+                self.vel_x = if self.direction == Direction::Left {
+                    -0x200
+                } else {
+                    0x200
+                };
+            }
+            5 => {
+                self.action_num = 6;
+                self.anim_num = 5;
+                self.cond.set_alive(false);
+            }
+            6 => {
+                self.anim_num = 5;
+            }
+            10 | 11 => {
+                if self.action_num == 10 {
+                    self.action_num = 11;
+                    self.anim_num = 1;
+                    self.anim_counter = 0;
+
+                    if self.direction == Direction::FacingPlayer {
+                        self.direction = if self.x > players[i].x {
+                            Direction::Left
+                        } else {
+                            Direction::Right
+                        }
+                    }
+                }
+
+                self.anim_counter += 1;
+                if self.anim_counter > 4 {
+                    self.anim_counter = 0;
+                    self.anim_num += 1;
+                }
+
+                if self.anim_num > 4 {
+                    self.anim_num = 1;
+                }
+
+                self.vel_x += if self.direction == Direction::Left {
+                    -0x200
+                } else {
+                    0x200
+                };
+
+                if abs(players[i].x - self.x) < 20 {
+                    self.action_num = 0;
+                }
+            }
+            20 | 21 => {
+                self.vel_x = 0;
+                self.anim_num = if self.action_num == 20 {
+                    6
+                } else {
+                    9
+                };
+            }
+            30 | 31 => {
+                if self.action_num == 30 {
+                    self.action_num = 31;
+                    self.action_counter = 0;
+                    self.vel_y = -0x400;
+                }
+
+                self.anim_num = 7;
+
+                self.vel_x = if self.direction == Direction::Left {
+                    -0x200
+                } else {
+                    0x200
+                };
+                self.vel_y += 0x40;
+
+                if self.action_counter != 0 && self.flags.hit_bottom_wall() {
+                    self.action_num = 32;
+                }
+                self.action_counter += 1;
+            }
+            32 => {
+                self.vel_x = 0;
+                self.vel_y += 0x40;
+                self.anim_num = 8;
+            }
+            70 | 71 => {
+                if self.action_num == 70 {
+                    self.action_num = 71;
+                    self.action_counter = 0;
+                    self.anim_num = 1;
+                    self.anim_counter = 0;
+                }
+
+                self.vel_x += if self.direction == Direction::Left {
+                    0x100
+                } else {
+                    -0x100
+                };
+
+                self.anim_counter += 1;
+                if self.anim_counter > 8 {
+                    self.anim_counter = 0;
+                    self.anim_num += 1;
+                }
+
+                if self.anim_num > 4 {
+                    self.anim_num = 1;
+                }
+            }
+            _ => {}
+        }
+
+        if self.vel_y > 0x5ff {
+            self.vel_y = 0x5ff;
+        }
+
+        self.x += self.vel_x;
+        self.y += self.vel_y;
+
+        self.anim_rect = if self.direction == Direction::Left {
+            state.constants.npc.n117_curly[self.anim_num as usize]
+        } else {
+            state.constants.npc.n117_curly[self.anim_num as usize + 10]
+        };
 
         Ok(())
     }
