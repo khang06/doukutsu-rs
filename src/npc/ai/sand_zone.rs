@@ -294,6 +294,81 @@ impl NPC {
         Ok(())
     }
 
+    pub(crate) fn tick_n056_tan_beetle(&mut self, state: &SharedGameState, players: [&mut Player; 2]) -> GameResult {
+        let player = self.get_closest_player_mut(players);
+        match self.action_num {
+            0 => {
+                self.action_num = if self.direction == Direction::Left {
+                    1
+                } else {
+                    3
+                };
+            }
+            1 | 3 => {
+                let vel_add = if self.action_num == 1 {
+                    -0x10
+                } else {
+                    0x10
+                };
+                self.vel_x = clamp(self.vel_x + vel_add, -0x400, 0x400);
+
+                self.x += if self.shock == 0 {
+                    self.vel_x
+                } else {
+                    self.vel_x / 2
+                };
+
+                self.anim_counter += 1;
+                if self.anim_counter > 1 {
+                    self.anim_counter = 0;
+                    self.anim_num += 1;
+                }
+
+                if self.anim_num > 2 {
+                    self.anim_num = 1;
+                }
+
+                let collided = if self.direction == Direction::Left {
+                    self.flags.hit_left_wall()
+                } else {
+                    self.flags.hit_right_wall()
+                };
+
+                if collided {
+                    self.action_num += 1;
+                    self.action_counter = 0;
+                    self.anim_num = 0;
+                    self.vel_x = 0;
+                    self.direction = if self.direction == Direction::Left {
+                        Direction::Right
+                    } else {
+                        Direction::Left
+                    };
+                }
+            }
+            2 | 4 => {
+                if abs(self.x - player.x) < 16 * 0x10 * 0x200 && abs(self.y - player.y) < 8 * 0x200 {
+                    self.action_num = if self.action_num == 2 {
+                        3
+                    } else {
+                        1
+                    };
+                    self.anim_num = 1;
+                    self.anim_counter = 0;
+                }
+            }
+            _ => {}
+        }
+
+        self.anim_rect = if self.direction == Direction::Left {
+            state.constants.npc.n056_tan_beetle[self.anim_num as usize]
+        } else {
+            state.constants.npc.n056_tan_beetle[self.anim_num as usize + 3]
+        };
+
+        Ok(())
+    }
+
     pub(crate) fn tick_n118_curly_boss(&mut self, state: &mut SharedGameState, players: [&mut Player; 2], npc_list: &NPCList, bullet_manager: &BulletManager) -> GameResult {
         let i = self.get_closest_player_idx_mut(&players);
 

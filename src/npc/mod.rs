@@ -201,6 +201,7 @@ impl GameEntity<([&mut Player; 2], &NPCList, &mut Stage, &BulletManager)> for NP
             49 => self.tick_n049_skullhead(state, npc_list),
             52 => self.tick_n052_sitting_blue_robot(state),
             55 => self.tick_n055_kazuma(state),
+            56 => self.tick_n056_tan_beetle(state, players),
             58 => self.tick_n058_basu(state, players, npc_list),
             59 => self.tick_n059_eye_door(state, players),
             60 => self.tick_n060_toroko(state, players),
