@@ -288,7 +288,7 @@ impl GameEntity<([&mut Player; 2], &NPCList, &mut Stage, &BulletManager)> for NP
             359 => self.tick_n359_droplet_generator(state, players, npc_list),
             //_ => Ok(()),
             _ => {
-                warn!("tried to tick unknown entity {}", self.npc_type);
+                //warn!("tried to tick unknown entity {}", self.npc_type);
                 Ok(())
             },
         }?;
