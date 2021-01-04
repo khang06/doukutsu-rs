@@ -455,7 +455,7 @@ impl NPC {
                     0x200
                 };
 
-                if abs(players[i].x - self.x) < 20 {
+                if abs(players[i].x - self.x) < 20 * 0x200 {
                     self.action_num = 0;
                 }
             }
