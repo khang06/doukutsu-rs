@@ -1,3 +1,5 @@
+#![feature(destructuring_assignment)]
+
 #[macro_use]
 extern crate log;
 #[cfg_attr(feature = "scripting", macro_use)]

@@ -1,6 +1,7 @@
 use ggez::GameResult;
-use num_traits::{abs, clamp};
+use num_traits::{abs, clamp, clamp_max};
 
+use crate::bullet::BulletManager;
 use crate::caret::CaretType;
 use crate::common::Direction;
 use crate::npc::list::NPCList;
@@ -293,6 +294,164 @@ impl NPC {
         Ok(())
     }
 
+    pub(crate) fn tick_n118_curly_boss(&mut self, state: &mut SharedGameState, players: [&mut Player; 2], npc_list: &NPCList, bullet_manager: &BulletManager) -> GameResult {
+        let i = self.get_closest_player_idx_mut(&players);
+
+        let looking_up = (self.direction == Direction::Left && self.x < players[i].x) ||
+                         (self.direction == Direction::Right && self.x > players[i].x);
+
+        match self.action_num {
+            0 => {
+                self.action_num = 1;
+                self.anim_num = 0;
+                self.anim_counter = 0;
+            }
+            10 | 11 => {
+                if self.action_num == 10 {
+                    self.action_num = 11;
+                    self.action_counter = self.rng.range(50..100) as u16;
+                    self.anim_num = 0;
+
+                    self.direction = if self.x > players[i].x {
+                        Direction::Left
+                    } else {
+                        Direction::Right
+                    };
+
+                    self.npc_flags.set_shootable(true);
+                    self.npc_flags.set_invulnerable(false);
+                }
+
+                if self.action_counter != 0 {
+                    self.action_counter -= 1;
+                } else {
+                    self.action_num = 13;
+                }
+            }
+            13 | 14 => {
+                if self.action_num == 13 {
+                    self.action_num = 14;
+                    self.action_counter = self.rng.range(50..100) as u16;
+                    self.anim_num = 3;
+
+                    self.direction = if self.x > players[i].x {
+                        Direction::Left
+                    } else {
+                        Direction::Right
+                    };
+                }
+
+                self.anim_counter += 1;
+                if self.anim_counter > 2 {
+                    self.anim_counter = 0;
+                    self.anim_num += 1;
+                }
+
+                if self.anim_num > 6 {
+                    self.anim_num = 3;
+                }
+
+                self.vel_x += if self.direction == Direction::Left {
+                    -0x40
+                } else {
+                    0x40
+                };
+
+                if self.action_counter != 0 {
+                    self.action_counter -= 1;
+                } else {
+                    self.npc_flags.set_shootable(true);
+                    self.action_num = 20;
+                    self.action_counter = 0;
+                    state.sound_manager.play_sfx(103);
+                }
+            }
+            20 => {
+                self.direction = if self.x > players[i].x {
+                    Direction::Left
+                } else {
+                    Direction::Right
+                };
+
+                self.vel_x = (self.vel_x * 8) / 9;
+
+                self.anim_num += 1;
+                if self.anim_num > 1 {
+                    self.anim_num = 0;
+                }
+
+                self.action_counter += 1;
+                if self.action_counter > 50 {
+                    self.action_num = 21;
+                    self.action_counter = 0;
+                }
+            }
+            21 => {
+                self.action_counter += 1;
+                if self.action_counter % 4 == 1 {
+                    let mut npc = NPC::create(123, &state.npc_table);
+                    npc.cond.set_alive(true);
+                    npc.x = self.x;
+                    npc.y = self.y;
+                    if looking_up {
+                        self.anim_num = 2;
+                        npc.y -= 8 * 0x200;
+                        npc.direction = Direction::Up;
+                    } else {
+                        self.anim_num = 0;
+                        npc.x += if self.direction == Direction::Left {
+                            -8 * 0x200
+                        } else {
+                            8 * 0x200
+                        };
+                        npc.y += 4 * 0x200;
+                        npc.direction = self.direction;
+                    }
+                    let _ = npc_list.spawn(0x100, npc);
+                }
+                if self.action_counter > 30 {
+                    self.action_num = 10;
+                }
+            }
+            30 => {
+                self.anim_num += 1;
+                if self.anim_num > 8 {
+                    self.anim_num = 7;
+                }
+
+                self.action_counter += 1;
+                if self.action_counter > 30 {
+                    self.action_num = 10;
+                    self.anim_num = 0;
+                }
+            }
+            _ => {}
+        }
+
+        if self.action_num > 10 && self.action_num < 30 && bullet_manager.count_bullets_type_idx_all(6) > 0 {
+            self.action_num = 30;
+            self.action_counter = 0;
+            self.anim_num = 7;
+            self.npc_flags.set_shootable(false);
+            self.npc_flags.set_invulnerable(true);
+            self.vel_x = 0;
+        }
+
+        self.vel_x = clamp(self.vel_x, -0x1ff, 0x1ff);
+        self.vel_y = clamp_max(self.vel_y + 0x20, 0x5ff);
+
+        self.x += self.vel_x;
+        self.y += self.vel_y;
+
+        self.anim_rect = if self.direction == Direction::Left {
+            state.constants.npc.n118_curly_boss[self.anim_num as usize]
+        } else {
+            state.constants.npc.n118_curly_boss[self.anim_num as usize + 9]
+        };
+
+        Ok(())
+    }
+
     pub(crate) fn tick_n120_colon_a(&mut self, state: &SharedGameState) -> GameResult {
         self.anim_rect = match self.direction {
             Direction::Left => state.constants.npc.n120_colon_a[0],
@@ -338,6 +497,50 @@ impl NPC {
                 state.create_caret(self.x, self.y, CaretType::Zzz, Direction::Left);
             }
         }
+
+        Ok(())
+    }
+
+    pub(crate) fn tick_n123_curly_boss_bullet(&mut self, state: &mut SharedGameState) -> GameResult {
+        let mut should_break = false;
+
+        match self.action_num {
+            0 => {
+                self.action_num = 1;
+                state.create_caret(self.x, self.y, CaretType::Shoot, Direction::Left);
+                state.sound_manager.play_sfx(32);
+
+                let rand = self.rng.range(-0x80..0x80);
+                (self.vel_x, self.vel_y) = match self.direction {
+                    Direction::Left => (-0x1000, rand),
+                    Direction::Up => (rand, -0x1000),
+                    Direction::Right => (0x1000, rand),
+                    Direction::Bottom => (rand, 0x1000),
+                    Direction::FacingPlayer => unreachable!(),
+                }
+            }
+            1 => {
+                should_break = match self.direction {
+                    Direction::Left => self.flags.hit_left_wall(),
+                    Direction::Up => self.flags.hit_top_wall(),
+                    Direction::Right => self.flags.hit_right_wall(),
+                    Direction::Bottom => self.flags.hit_bottom_wall(),
+                    Direction::FacingPlayer => unreachable!(),
+                };
+
+                self.x += self.vel_x;
+                self.y += self.vel_y;
+            }
+            _ => {}
+        }
+
+        if should_break {
+            state.create_caret(self.x, self.y, CaretType::ProjectileDissipation, Direction::Right);
+            state.sound_manager.play_sfx(28);
+            self.cond.set_alive(false);
+        }
+
+        self.anim_rect = state.constants.npc.n123_curly_boss_bullet[self.direction as usize];
 
         Ok(())
     }
